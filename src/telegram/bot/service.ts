@@ -13,6 +13,7 @@ import {
   BOT_METHODS_BY_NAME,
   type BotToolFamily,
 } from "./method-matrix.js";
+import { validateBotMethodInput } from "./method-schemas.js";
 
 const telegramToolRequestSchema = z.object({
   accountRef: z.string().min(1),
@@ -45,6 +46,8 @@ export class TelegramBotService {
   ): Promise<Record<string, unknown>> {
     const parsed = telegramToolRequestSchema.parse(request);
     const method = this.resolveMethodName(family, parsed.operation, parsed.input);
+    const methodPayload = this.resolveMethodPayload(family, parsed.input);
+    validateBotMethodInput(method, methodPayload);
     const methodSpec = BOT_METHODS_BY_NAME[method];
     const riskLevel = methodSpec?.riskLevel ?? "critical";
     const toolName = `telegram.bot.${family}`;
@@ -92,7 +95,7 @@ export class TelegramBotService {
     const result = await this.botClient.callApi<Record<string, unknown>>(
       token,
       method,
-      parsed.input,
+      methodPayload,
     );
     const response = {
       ok: true,
@@ -154,6 +157,23 @@ export class TelegramBotService {
       throw new Error(`Unknown or unsupported operation "${operation}" for ${family}`);
     }
     return byCaseInsensitive.method;
+  }
+
+  private resolveMethodPayload(
+    family: BotToolFamily,
+    input: Record<string, unknown>,
+  ): Record<string, unknown> {
+    if (family !== "raw") {
+      return input;
+    }
+
+    const params = input.params;
+    if (params && typeof params === "object" && !Array.isArray(params)) {
+      return params as Record<string, unknown>;
+    }
+
+    const { method: _method, ...rest } = input;
+    return rest;
   }
 
   private async resolveBotToken(accountRef: string): Promise<string> {

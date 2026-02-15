@@ -30,9 +30,11 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsx src/index.ts",
+    "generate:bot-contract": "tsx scripts/generate-bot-api-contract.ts",
+    "check:bot-contract": "tsx scripts/generate-bot-api-contract.ts --check",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "npm run check:bot-contract && vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run tests/unit",
     "test:contract": "vitest run tests/contract",
@@ -42,7 +44,7 @@
     "migrate": "tsx src/index.ts migrate",
     "start:stdio": "node dist/index.cjs serve --transport=stdio",
     "start:http": "node dist/index.cjs serve --transport=http --port=3000",
-    "ci": "npm run lint && npm run test && npm run build",
+    "ci": "npm run lint && npm run check:bot-contract && npm run test && npm run build",
     "prepare:release": "npm run ci"
   },
   "keywords": [
@@ -57,6 +59,7 @@
   "packageManager": "npm@11.0.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
+    "ajv": "^8.18.0",
     "commander": "^14.0.3",
     "express": "^5.2.1",
     "jose": "^6.1.3",
@@ -69,6 +72,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@grammyjs/types": "^3.24.0",
     "@types/express": "^5.0.6",
     "@types/node": "^25.2.3",
     "@types/pg": "^8.16.0",
@@ -77,6 +81,7 @@
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "typescript-json-schema": "^0.67.1",
     "vitest": "^4.0.18"
   }
 }

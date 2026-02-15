@@ -1,0 +1,76 @@
+name: Bot Contract Sync
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "package.json"
+      - "package-lock.json"
+  schedule:
+    - cron: "30 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: bot-contract-sync
+  cancel-in-progress: true
+
+jobs:
+  sync-bot-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve @grammyjs/types version
+        id: grammy
+        run: |
+          VERSION=$(node -p "require('./node_modules/@grammyjs/types/package.json').version")
+          VERSION_BRANCH=${VERSION//./-}
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "version_branch=${VERSION_BRANCH}" >> "$GITHUB_OUTPUT"
+
+      - name: Regenerate Bot API contract artifacts
+        run: npm run generate:bot-contract
+
+      - name: Verify generated artifacts are stable
+        run: npm run check:bot-contract
+
+      - name: Create pull request if generated artifacts changed
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(bot-contract): sync generated bot api contract"
+          title: "chore(bot-contract): sync generated contract for @grammyjs/types ${{ steps.grammy.outputs.version }}"
+          body: |
+            Automated sync of generated Telegram Bot API contract artifacts.
+
+            Source dependency:
+            - `@grammyjs/types@${{ steps.grammy.outputs.version }}`
+
+            Changes in this PR:
+            - `src/telegram/bot/generated/bot-api-methods.generated.json`
+            - `src/telegram/bot/generated/bot-api-contract.generated.json`
+          branch: "ci/bot-contract-sync-v${{ steps.grammy.outputs.version_branch }}"
+          delete-branch: true
+          labels: |
+            automation
+            bot-api
+            contracts
+          add-paths: |
+            src/telegram/bot/generated/bot-api-methods.generated.json
+            src/telegram/bot/generated/bot-api-contract.generated.json

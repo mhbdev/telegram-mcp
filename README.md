@@ -5,6 +5,8 @@ Production-grade Telegram MCP server (Bot API complete domains + MTProto foundat
 ## Features
 - Dual transport: `stdio` and streamable HTTP (`/mcp`).
 - Security defaults: OIDC JWT auth (Keycloak), RBAC + tool allowlists, encrypted-at-rest bot/MTProto credentials.
+- Strict per-method Bot API JSON Schema validation generated from `@grammyjs/types`.
+- Automated Bot API parity checks against generated method inventory.
 - PostgreSQL persistence with idempotency, audit log, policy storage, and session/account records.
 - Telegram tool families:
   - `telegram.bot.messages`
@@ -89,6 +91,15 @@ TELEGRAM_MCP_MASTER_KEY="$(openssl rand -base64 32)" docker compose up --build
 ```bash
 npm run test
 ```
+
+Regenerate and validate Bot API contracts:
+```bash
+npm run generate:bot-contract
+npm run check:bot-contract
+```
+
+GitHub automation:
+- `.github/workflows/bot-contract-sync.yml` regenerates contract artifacts after `@grammyjs/types` bumps (via `package*.json` changes on `main`) and opens an automated PR when generated files change.
 
 ## Production Notes
 - Keep `TELEGRAM_MCP_MASTER_KEY` in a secret manager or sealed environment secret.
