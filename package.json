@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Production-grade Telegram MCP server with Bot API + MTProto foundation",
   "type": "module",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
