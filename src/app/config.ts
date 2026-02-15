@@ -1,4 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
+import { dirname, extname, resolve } from "node:path";
+import YAML from "yaml";
 import { z } from "zod";
 
 const serverSchema = z.object({
@@ -104,6 +106,82 @@ export const configSchema = z.object({
 
 export type AppConfig = z.infer<typeof configSchema>;
 
+const CONFIG_DISCOVERY_ORDER = [
+  ".telegram-mcp/config.json",
+  ".telegram-mcp/config.yaml",
+  ".telegram-mcp/config.yml",
+  "telegram-mcp.config.json",
+  "telegram-mcp.config.example.json",
+] as const;
+
+function resolvePackagedExampleConfigPath(): string {
+  const argvPath = process.argv[1];
+  if (!argvPath) {
+    return resolve(process.cwd(), "telegram-mcp.config.example.json");
+  }
+  const entryPath = resolve(process.cwd(), argvPath);
+  return resolve(dirname(entryPath), "..", "telegram-mcp.config.example.json");
+}
+
+function parseConfigFile(path: string): unknown {
+  const raw = readFileSync(path, "utf8");
+  const extension = extname(path).toLowerCase();
+  if (extension === ".json") {
+    try {
+      return JSON.parse(raw);
+    } catch (error) {
+      const details = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to parse JSON config at ${path}: ${details}`);
+    }
+  }
+  if (extension === ".yaml" || extension === ".yml") {
+    try {
+      return YAML.parse(raw);
+    } catch (error) {
+      const details = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to parse YAML config at ${path}: ${details}`);
+    }
+  }
+  throw new Error(
+    `Unsupported config extension for ${path}. Use .json, .yaml, or .yml.`,
+  );
+}
+
+function resolveConfigPath(configPath?: string): string {
+  if (configPath) {
+    const absolute = resolve(process.cwd(), configPath);
+    if (!existsSync(absolute)) {
+      throw new Error(`Config file not found: ${absolute}`);
+    }
+    return absolute;
+  }
+
+  const envPath = process.env.TELEGRAM_MCP_CONFIG;
+  if (envPath) {
+    const absolute = resolve(process.cwd(), envPath);
+    if (!existsSync(absolute)) {
+      throw new Error(`Config file not found: ${absolute}`);
+    }
+    return absolute;
+  }
+
+  for (const candidate of CONFIG_DISCOVERY_ORDER) {
+    const absolute = resolve(process.cwd(), candidate);
+    if (existsSync(absolute)) {
+      return absolute;
+    }
+  }
+
+  const packagedExample = resolvePackagedExampleConfigPath();
+  if (existsSync(packagedExample)) {
+    return packagedExample;
+  }
+
+  throw new Error(
+    `No config file found. Looked for: ${CONFIG_DISCOVERY_ORDER.join(", ")}`,
+  );
+}
+
 function mergeEnvOverrides(config: AppConfig): AppConfig {
   const patch: Partial<AppConfig> = {};
   const httpPortRaw = process.env.TELEGRAM_MCP_PORT;
@@ -134,25 +212,8 @@ function mergeEnvOverrides(config: AppConfig): AppConfig {
 }
 
 export function loadConfig(configPath?: string): AppConfig {
-  const path = configPath ?? process.env.TELEGRAM_MCP_CONFIG;
-  let candidate: unknown = {};
-  if (path) {
-    if (!existsSync(path)) {
-      throw new Error(`Config file not found: ${path}`);
-    }
-    const raw = readFileSync(path, "utf8");
-    candidate = JSON.parse(raw);
-  } else {
-    const fallbackPath = "telegram-mcp.config.json";
-    if (existsSync(fallbackPath)) {
-      candidate = JSON.parse(readFileSync(fallbackPath, "utf8"));
-    } else {
-      candidate = JSON.parse(
-        readFileSync("telegram-mcp.config.example.json", "utf8"),
-      );
-    }
-  }
-
+  const path = resolveConfigPath(configPath);
+  const candidate = parseConfigFile(path);
   const parsed = configSchema.parse(candidate);
   return mergeEnvOverrides(parsed);
 }

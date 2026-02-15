@@ -50,38 +50,55 @@ Production-grade Telegram MCP server (Bot API complete domains + MTProto foundat
 
 ## Prerequisites
 - Node.js 22+
-- PostgreSQL 16+
+- Docker + Docker Compose (for `--profile local`)
+- PostgreSQL 16+ (for `--profile external`)
 - Telegram bot token(s)
 - Telegram `apiId` and `apiHash` for MTProto
-- OIDC provider (Keycloak profile included in `docker/`)
 
-## Quickstart
+## Quickstart (No Clone)
+One-line setup:
 ```bash
-npm install
-cp telegram-mcp.config.example.json telegram-mcp.config.json
+npx telegram-mcp@latest setup
 ```
 
-Set a 32-byte base64 master key:
+One-line runtime (self-healing):
 ```bash
-export TELEGRAM_MCP_MASTER_KEY="$(openssl rand -base64 32)"
+npx telegram-mcp@latest run
 ```
 
-Run migrations:
+Direct serve mode:
 ```bash
-npm run migrate
+npx telegram-mcp@latest serve --transport=stdio
 ```
 
-Run HTTP mode:
-```bash
-npm run dev -- serve --transport=http --port=3000
-```
+## Profiles
+- `local` (default): writes `.telegram-mcp/config.json` and `.telegram-mcp/.env`, sets `auth.required=false`, starts `postgres + keycloak + minio + minio-init`, and runs migrations unless `--skip-migrate`.
+- `external`: writes config/env only by default and does not bootstrap local dependencies.
 
-Run stdio mode:
+## Config And Env Defaults
+- Config discovery order:
+  - `.telegram-mcp/config.json`
+  - `.telegram-mcp/config.yaml`
+  - `.telegram-mcp/config.yml`
+  - `telegram-mcp.config.json`
+  - `telegram-mcp.config.example.json`
+- Default generated files:
+  - `.telegram-mcp/config.json`
+  - `.telegram-mcp/.env`
+- Setup format:
+  - default `json`
+  - `--format yaml` supported
+
+Examples:
 ```bash
-npm run dev -- serve --transport=stdio
+npx telegram-mcp@latest setup --format yaml
+npx telegram-mcp@latest setup --profile external --non-interactive --yes
+npx telegram-mcp@latest run --transport http --host 127.0.0.1 --port 3000 --non-interactive --yes
 ```
 
 ## CLI
+- `telegram-mcp setup [--profile local|external] [--format json|yaml]`
+- `telegram-mcp run [--profile local|external] [--transport stdio|http]`
 - `telegram-mcp serve --transport=stdio`
 - `telegram-mcp serve --transport=http --port=3000`
 - `telegram-mcp migrate`
@@ -113,6 +130,18 @@ TELEGRAM_MCP_MASTER_KEY="$(openssl rand -base64 32)" docker compose up --build
 npm run test
 ```
 
+CLI end-to-end smoke test:
+```bash
+npm run build
+npm run test:e2e:smoke
+```
+
+Optional full-stack e2e (manual/nightly style):
+```bash
+npm run build
+npm run test:e2e:fullstack
+```
+
 Regenerate and validate Bot API contracts:
 ```bash
 npm run generate:bot-contract
@@ -121,6 +150,17 @@ npm run check:bot-contract
 
 GitHub automation:
 - `.github/workflows/bot-contract-sync.yml` regenerates contract artifacts after `@grammyjs/types` bumps (via `package*.json` changes on `main`) and opens an automated PR when generated files change.
+- `.github/workflows/e2e-fullstack.yml` runs optional full-stack CLI e2e on schedule/manual trigger.
+
+## Troubleshooting
+- Docker Compose missing during `setup --profile local`:
+  - interactive mode offers fallback options
+  - non-interactive mode continues setup without dependency bootstrap
+- Non-interactive `run` with missing setup artifacts:
+  - pass `--yes` so self-healing setup can run automatically
+- Existing config/env files:
+  - setup prompts before overwrite in interactive mode
+  - non-interactive overwrite requires `--force`
 
 ## Production Notes
 - Keep `TELEGRAM_MCP_MASTER_KEY` in a secret manager or sealed environment secret.

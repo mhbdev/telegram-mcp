@@ -30,3 +30,44 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: telegram_mcp
+          POSTGRES_USER: telegram_mcp
+          POSTGRES_PASSWORD: telegram_mcp
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U telegram_mcp -d telegram_mcp"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Wait for Postgres
+        run: |
+          node -e "const { Client } = require('pg'); (async () => { for (let i = 0; i < 30; i++) { try { const c = new Client({ connectionString: 'postgresql://telegram_mcp:telegram_mcp@127.0.0.1:5432/telegram_mcp' }); await c.connect(); await c.end(); console.log('Postgres is ready'); process.exit(0); } catch (error) { await new Promise((resolve) => setTimeout(resolve, 1000)); } } console.error('Postgres readiness timed out'); process.exit(1); })();"
+
+      - name: Run CLI smoke e2e
+        env:
+          TELEGRAM_MCP_E2E_DATABASE_URL: postgresql://telegram_mcp:telegram_mcp@127.0.0.1:5432/telegram_mcp
+        run: npm run test:e2e:smoke

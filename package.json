@@ -41,6 +41,8 @@
     "test:integration": "vitest run tests/integration",
     "test:security": "vitest run tests/security",
     "test:load-smoke": "vitest run tests/load-smoke",
+    "test:e2e:smoke": "vitest run --config vitest.e2e.config.ts tests/e2e/cli-smoke.e2e.ts",
+    "test:e2e:fullstack": "tsx scripts/e2e-fullstack.ts",
     "migrate": "tsx src/index.ts migrate",
     "start:stdio": "node dist/index.cjs serve --transport=stdio",
     "start:http": "node dist/index.cjs serve --transport=http --port=3000",
@@ -71,6 +73,7 @@
     "telegram": "^2.26.22",
     "undici": "^7.22.0",
     "uuid": "^13.0.0",
+    "yaml": "^2.8.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
