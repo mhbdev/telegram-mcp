@@ -7,6 +7,7 @@ import type {
 import * as z from "zod/v4";
 import type { AppContainer } from "../app/container.js";
 import type { Principal, Role, TelegramToolRequest } from "../types/core.js";
+import { registerV2Resources, registerV2Tools } from "./v2-tools.js";
 
 type Extra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 
@@ -207,6 +208,8 @@ export function buildMcpServer(container: AppContainer): McpServer {
     },
   );
 
+  registerV2Tools(server, container, parsePrincipal, toolResult);
+
   server.registerResource(
     "telegram-bots",
     "telegram://bots",
@@ -247,9 +250,7 @@ export function buildMcpServer(container: AppContainer): McpServer {
           contents: [
             {
               uri: `telegram://bot/${botId}/profile`,
-              text: JSON.stringify({
-                found: false,
-              }),
+              text: JSON.stringify({ found: false }),
             },
           ],
         };
@@ -304,5 +305,6 @@ export function buildMcpServer(container: AppContainer): McpServer {
     },
   );
 
+  registerV2Resources(server, container);
   return server;
 }

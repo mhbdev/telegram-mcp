@@ -36,6 +36,17 @@ const telegramSchema = z.object({
   updateMode: z.enum(["webhook", "polling"]).default("webhook"),
   apiId: z.number().int().positive().optional(),
   apiHash: z.string().min(10).optional(),
+  mtproto: z
+    .object({
+      rateLimit: z.number().int().positive().default(30),
+      retry: z.number().int().min(0).max(10).default(3),
+      floodWaitPolicy: z.enum(["respect", "error"]).default("respect"),
+    })
+    .default({
+      rateLimit: 30,
+      retry: 3,
+      floodWaitPolicy: "respect",
+    }),
 });
 
 const policySchema = z.object({
@@ -52,6 +63,32 @@ const observabilitySchema = z.object({
   metricsEnabled: z.boolean().default(true),
 });
 
+const storageSchema = z.object({
+  s3: z.object({
+    endpoint: z.string().url().optional(),
+    region: z.string().default("us-east-1"),
+    bucket: z.string().min(3),
+    accessKeyEnv: z.string().default("TELEGRAM_MCP_S3_ACCESS_KEY"),
+    secretKeyEnv: z.string().default("TELEGRAM_MCP_S3_SECRET_KEY"),
+    forcePathStyle: z.boolean().default(true),
+    signedUrlTtlSeconds: z.number().int().min(30).max(86_400).default(900),
+  }),
+});
+
+const approvalsSchema = z.object({
+  enabled: z.boolean().default(true),
+  ttlSeconds: z.number().int().min(60).max(86_400).default(900),
+  requiredRiskLevels: z
+    .array(z.enum(["low", "medium", "high", "critical"]))
+    .default(["high", "critical"]),
+  maxPending: z.number().int().positive().default(1000),
+});
+
+const retentionSchema = z.object({
+  mode: z.enum(["metadata_only", "encrypted_content"]).default("metadata_only"),
+  contentTtlDays: z.number().int().positive().default(30),
+});
+
 export const configSchema = z.object({
   server: serverSchema,
   auth: authSchema,
@@ -59,6 +96,9 @@ export const configSchema = z.object({
   encryption: encryptionSchema,
   telegram: telegramSchema,
   policy: policySchema,
+  storage: storageSchema,
+  approvals: approvalsSchema,
+  retention: retentionSchema,
   observability: observabilitySchema,
 });
 

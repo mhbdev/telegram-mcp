@@ -101,6 +101,11 @@ CREATE TABLE IF NOT EXISTS audit_events (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb
 );
 
+ALTER TABLE audit_events
+  ADD COLUMN IF NOT EXISTS risk_level TEXT,
+  ADD COLUMN IF NOT EXISTS approval_id UUID,
+  ADD COLUMN IF NOT EXISTS client_context JSONB NOT NULL DEFAULT '{}'::jsonb;
+
 CREATE TABLE IF NOT EXISTS job_runs (
   id BIGSERIAL PRIMARY KEY,
   job_type TEXT NOT NULL,
@@ -112,6 +117,82 @@ CREATE TABLE IF NOT EXISTS job_runs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS approval_requests (
+  id UUID PRIMARY KEY,
+  principal_subject TEXT NOT NULL,
+  tool TEXT NOT NULL,
+  operation TEXT NOT NULL,
+  risk_level TEXT NOT NULL,
+  payload_hash TEXT NOT NULL,
+  status TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS approval_tokens (
+  id UUID PRIMARY KEY,
+  approval_request_id UUID NOT NULL REFERENCES approval_requests(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS media_objects (
+  id UUID PRIMARY KEY,
+  account_ref TEXT NOT NULL,
+  object_key TEXT NOT NULL UNIQUE,
+  bucket TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  size_bytes BIGINT NOT NULL,
+  status TEXT NOT NULL,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS media_access_events (
+  id UUID PRIMARY KEY,
+  media_object_id UUID NOT NULL REFERENCES media_objects(id) ON DELETE CASCADE,
+  principal_subject TEXT NOT NULL,
+  action TEXT NOT NULL,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS retention_policies (
+  id UUID PRIMARY KEY,
+  mode TEXT NOT NULL,
+  content_ttl_days INTEGER NOT NULL,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS mtproto_operation_journal (
+  id UUID PRIMARY KEY,
+  account_ref TEXT NOT NULL,
+  domain TEXT NOT NULL,
+  operation TEXT NOT NULL,
+  success BOOLEAN NOT NULL,
+  error TEXT,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_approval_requests_expires
+  ON approval_requests(expires_at, status);
+CREATE INDEX IF NOT EXISTS idx_approval_tokens_lookup
+  ON approval_tokens(token_hash, status, expires_at);
+CREATE INDEX IF NOT EXISTS idx_media_objects_lookup
+  ON media_objects(account_ref, status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_mtproto_operation_journal_lookup
+  ON mtproto_operation_journal(account_ref, domain, operation, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_events_tool_op_time
+  ON audit_events(tool, operation, timestamp DESC);
 `;
 
 export async function runMigrations(db: Database): Promise<void> {

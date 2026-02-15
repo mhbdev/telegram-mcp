@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import type pino from "pino";
 import { AuditRepository } from "../storage/repositories.js";
 
+import type { RiskLevel } from "../types/core.js";
+
 export interface AuditLogInput {
   principalSubject: string;
   action: string;
@@ -9,6 +11,9 @@ export interface AuditLogInput {
   operation: string;
   allowed: boolean;
   reason: string;
+  riskLevel?: RiskLevel;
+  approvalId?: string | null;
+  clientContext?: Record<string, unknown>;
   metadata?: Record<string, unknown>;
 }
 
@@ -28,6 +33,9 @@ export class AuditService {
       operation: input.operation,
       allowed: input.allowed,
       reason: input.reason,
+      riskLevel: input.riskLevel,
+      approvalId: input.approvalId ?? null,
+      clientContext: input.clientContext ?? {},
       metadata: input.metadata ?? {},
     };
 
@@ -42,6 +50,8 @@ export class AuditService {
           operation: event.operation,
           allowed: event.allowed,
           reason: event.reason,
+          riskLevel: event.riskLevel,
+          approvalId: event.approvalId,
         },
       },
       "audit event written",

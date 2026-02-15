@@ -30,12 +30,37 @@ const cfg: AppConfig = {
     maxRetries: 4,
     baseUrl: "https://api.telegram.org",
     updateMode: "webhook",
+    mtproto: {
+      rateLimit: 30,
+      retry: 3,
+      floodWaitPolicy: "respect",
+    },
     apiId: 1,
     apiHash: "01234567890123456789012345678901",
   },
   policy: {
     defaultEffect: "deny",
     allowRawToolForRoles: ["owner", "admin"],
+  },
+  storage: {
+    s3: {
+      region: "us-east-1",
+      bucket: "telegram-mcp-test-bucket",
+      accessKeyEnv: "TELEGRAM_MCP_S3_ACCESS_KEY",
+      secretKeyEnv: "TELEGRAM_MCP_S3_SECRET_KEY",
+      forcePathStyle: true,
+      signedUrlTtlSeconds: 900,
+    },
+  },
+  approvals: {
+    enabled: true,
+    ttlSeconds: 900,
+    requiredRiskLevels: ["high", "critical"],
+    maxPending: 1000,
+  },
+  retention: {
+    mode: "metadata_only",
+    contentTtlDays: 30,
   },
   observability: {
     logLevel: "info",

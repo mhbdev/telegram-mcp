@@ -40,6 +40,9 @@ export interface AuditEvent {
   operation: string;
   allowed: boolean;
   reason: string;
+  riskLevel?: RiskLevel;
+  approvalId?: string | null;
+  clientContext?: Record<string, unknown>;
   metadata: Record<string, unknown>;
 }
 
@@ -48,4 +51,30 @@ export interface EncryptedValue {
   iv: string;
   ciphertext: string;
   authTag: string;
+}
+
+export type ApprovalStatus = "pending" | "approved" | "rejected" | "expired";
+
+export interface ApprovalRequest {
+  id: string;
+  principalSubject: string;
+  tool: string;
+  operation: string;
+  riskLevel: RiskLevel;
+  payloadHash: string;
+  status: ApprovalStatus;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface MediaObject {
+  id: string;
+  accountRef: string;
+  objectKey: string;
+  bucket: string;
+  mimeType: string;
+  sizeBytes: number;
+  status: "pending" | "ready" | "deleted";
+  createdAt: string;
+  updatedAt: string;
 }

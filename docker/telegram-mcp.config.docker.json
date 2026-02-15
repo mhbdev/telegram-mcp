@@ -7,13 +7,13 @@
     "port": 3000
   },
   "auth": {
-    "issuer": "http://localhost:8080/realms/telegram-mcp",
+    "issuer": "http://keycloak:8080/realms/telegram-mcp",
     "audience": "telegram-mcp",
-    "jwksUri": "http://localhost:8080/realms/telegram-mcp/protocol/openid-connect/certs",
+    "jwksUri": "http://keycloak:8080/realms/telegram-mcp/protocol/openid-connect/certs",
     "required": true
   },
   "database": {
-    "url": "postgresql://telegram_mcp:telegram_mcp@localhost:5432/telegram_mcp",
+    "url": "postgresql://telegram_mcp:telegram_mcp@postgres:5432/telegram_mcp",
     "maxConnections": 20,
     "ssl": false
   },
@@ -43,7 +43,7 @@
   },
   "storage": {
     "s3": {
-      "endpoint": "http://localhost:9000",
+      "endpoint": "http://minio:9000",
       "region": "us-east-1",
       "bucket": "telegram-mcp-media",
       "accessKeyEnv": "TELEGRAM_MCP_S3_ACCESS_KEY",

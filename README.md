@@ -24,11 +24,29 @@ Production-grade Telegram MCP server (Bot API complete domains + MTProto foundat
   - `telegram.bot.raw` (restricted)
   - `telegram.mtproto.sessions`
   - `telegram.mtproto.core`
+- Versioned MTProto superset tool families:
+  - `telegram.v2.chats`
+  - `telegram.v2.messages`
+  - `telegram.v2.contacts`
+  - `telegram.v2.profile`
+  - `telegram.v2.search`
+  - `telegram.v2.privacy`
+  - `telegram.v2.drafts`
+  - `telegram.v2.inline`
+  - `telegram.v2.media` (S3/MinIO bridge)
+  - `telegram.v2.approval.request`
+  - `telegram.v2.approval.execute`
+  - `telegram.v2.approval.status`
 - MCP resources:
   - `telegram://bots`
   - `telegram://bot/{botId}/profile`
   - `telegram://policies`
   - `telegram://audit/recent`
+  - `telegram://v2/chats`
+  - `telegram://v2/contacts`
+  - `telegram://v2/drafts`
+  - `telegram://v2/approvals/recent`
+  - `telegram://v2/media/{objectId}`
 
 ## Prerequisites
 - Node.js 22+
@@ -81,11 +99,14 @@ npm run dev -- serve --transport=stdio
 - `GET /readyz`
 - `GET /metrics`
 
-## Docker Compose (Postgres + Keycloak + App)
+## Docker Compose (Postgres + Keycloak + MinIO + App)
 ```bash
 cd docker
 TELEGRAM_MCP_MASTER_KEY="$(openssl rand -base64 32)" docker compose up --build
 ```
+
+## Competitive Matrix
+- `docs/competitor-gap-matrix.md` maps competitor capability groups to `telegram.v2` operations.
 
 ## Tests
 ```bash
