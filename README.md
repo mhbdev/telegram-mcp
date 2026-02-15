@@ -58,17 +58,17 @@ Production-grade Telegram MCP server (Bot API complete domains + MTProto foundat
 ## Quickstart (No Clone)
 One-line setup:
 ```bash
-npx telegram-mcp@latest setup
+npx @mhbdev/telegram-mcp@latest setup
 ```
 
 One-line runtime (self-healing):
 ```bash
-npx telegram-mcp@latest run
+npx @mhbdev/telegram-mcp@latest run
 ```
 
 Direct serve mode:
 ```bash
-npx telegram-mcp@latest serve --transport=stdio
+npx @mhbdev/telegram-mcp@latest serve --transport=stdio
 ```
 
 ## Profiles
@@ -91,9 +91,9 @@ npx telegram-mcp@latest serve --transport=stdio
 
 Examples:
 ```bash
-npx telegram-mcp@latest setup --format yaml
-npx telegram-mcp@latest setup --profile external --non-interactive --yes
-npx telegram-mcp@latest run --transport http --host 127.0.0.1 --port 3000 --non-interactive --yes
+npx @mhbdev/telegram-mcp@latest setup --format yaml
+npx @mhbdev/telegram-mcp@latest setup --profile external --non-interactive --yes
+npx @mhbdev/telegram-mcp@latest run --transport http --host 127.0.0.1 --port 3000 --non-interactive --yes
 ```
 
 ## CLI

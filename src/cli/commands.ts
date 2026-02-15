@@ -183,9 +183,9 @@ export function createCli(): Command {
       "after",
       `
 Examples:
-  npx telegram-mcp@latest setup
-  npx telegram-mcp@latest run
-  npx telegram-mcp@latest serve --transport=http --port=3000`,
+  npx @mhbdev/telegram-mcp@latest setup
+  npx @mhbdev/telegram-mcp@latest run
+  npx @mhbdev/telegram-mcp@latest serve --transport=http --port=3000`,
     );
 
   addSetupRunOptions(

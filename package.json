@@ -1,5 +1,5 @@
 {
-  "name": "telegram-mcp",
+  "name": "@mhbdev/telegram-mcp",
   "version": "0.1.0",
   "description": "Production-grade Telegram MCP server with Bot API + MTProto foundation",
   "type": "module",

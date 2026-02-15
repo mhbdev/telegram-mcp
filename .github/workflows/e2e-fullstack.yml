@@ -8,6 +8,7 @@ on:
 jobs:
   fullstack:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,8 +22,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run core test suite
+        run: npm test
+
       - name: Build
         run: npm run build
 
+      - name: Start Postgres for smoke e2e
+        run: docker compose -f docker/docker-compose.yml up -d postgres
+
+      - name: Wait for Postgres
+        run: |
+          node -e "const { Client } = require('pg'); (async () => { for (let i = 0; i < 30; i++) { try { const c = new Client({ connectionString: 'postgresql://telegram_mcp:telegram_mcp@127.0.0.1:5432/telegram_mcp' }); await c.connect(); await c.end(); console.log('Postgres is ready'); process.exit(0); } catch { await new Promise((resolve) => setTimeout(resolve, 1000)); } } console.error('Postgres readiness timed out'); process.exit(1); })();"
+
+      - name: Run CLI smoke e2e
+        env:
+          TELEGRAM_MCP_E2E_DATABASE_URL: postgresql://telegram_mcp:telegram_mcp@127.0.0.1:5432/telegram_mcp
+        run: npm run test:e2e:smoke
+
       - name: Run full-stack CLI e2e
         run: npm run test:e2e:fullstack
+
+      - name: Cleanup docker compose stack
+        if: always()
+        run: docker compose -f docker/docker-compose.yml down --remove-orphans
