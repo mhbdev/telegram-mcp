@@ -1,0 +1,37 @@
+{
+  "version": "v1",
+  "defaultEffect": "deny",
+  "allowRawToolForRoles": [
+    "owner",
+    "admin"
+  ],
+  "permissions": [
+    {
+      "tool": "telegram.bot.messages",
+      "operations": [
+        "sendMessage",
+        "editMessageText",
+        "deleteMessage"
+      ],
+      "riskLevel": "low",
+      "effect": "allow"
+    },
+    {
+      "tool": "telegram.bot.members",
+      "operations": [
+        "banChatMember",
+        "unbanChatMember"
+      ],
+      "riskLevel": "high",
+      "effect": "allow"
+    },
+    {
+      "tool": "telegram.bot.raw",
+      "operations": [
+        "*"
+      ],
+      "riskLevel": "critical",
+      "effect": "deny"
+    }
+  ]
+}

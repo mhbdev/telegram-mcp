@@ -1,0 +1,43 @@
+{
+  "server": {
+    "name": "telegram-mcp",
+    "version": "0.1.0",
+    "transport": "http",
+    "host": "0.0.0.0",
+    "port": 3000
+  },
+  "auth": {
+    "issuer": "http://localhost:8080/realms/telegram-mcp",
+    "audience": "telegram-mcp",
+    "jwksUri": "http://localhost:8080/realms/telegram-mcp/protocol/openid-connect/certs",
+    "required": true
+  },
+  "database": {
+    "url": "postgresql://telegram_mcp:telegram_mcp@localhost:5432/telegram_mcp",
+    "maxConnections": 20,
+    "ssl": false
+  },
+  "encryption": {
+    "masterKeyEnv": "TELEGRAM_MCP_MASTER_KEY",
+    "previousMasterKeyEnv": "TELEGRAM_MCP_PREVIOUS_MASTER_KEY"
+  },
+  "telegram": {
+    "requestTimeoutMs": 20000,
+    "maxRetries": 4,
+    "baseUrl": "https://api.telegram.org",
+    "updateMode": "webhook",
+    "apiId": 123456,
+    "apiHash": "replace-with-real-api-hash"
+  },
+  "policy": {
+    "defaultEffect": "deny",
+    "allowRawToolForRoles": [
+      "admin",
+      "owner"
+    ]
+  },
+  "observability": {
+    "logLevel": "info",
+    "metricsEnabled": true
+  }
+}

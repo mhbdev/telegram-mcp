@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: telegram-mcp-postgres
+    environment:
+      POSTGRES_DB: telegram_mcp
+      POSTGRES_USER: telegram_mcp
+      POSTGRES_PASSWORD: telegram_mcp
+    ports:
+      - "5432:5432"
+    volumes:
+      - telegram_mcp_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U telegram_mcp -d telegram_mcp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: telegram-mcp-keycloak
+    command:
+      - start-dev
+      - --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: telegram-mcp-app
+    environment:
+      TELEGRAM_MCP_CONFIG: /app/telegram-mcp.config.json
+      TELEGRAM_MCP_MASTER_KEY: ${TELEGRAM_MCP_MASTER_KEY}
+      TELEGRAM_MCP_DATABASE_URL: postgresql://telegram_mcp:telegram_mcp@postgres:5432/telegram_mcp
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../telegram-mcp.config.example.json:/app/telegram-mcp.config.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+
+volumes:
+  telegram_mcp_pg:
